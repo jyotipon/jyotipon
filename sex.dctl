@@ -1,63 +1,51 @@
-DEFINE_UI_PARAMS(saturation, Saturation, DCTLUI_SLIDER_FLOAT, 0.7, 0.0, 2.0, 0.01)
-DEFINE_UI_PARAMS(contrast, Contrast, DCTLUI_SLIDER_FLOAT, 1.0, 0.5, 2.0, 0.01)
-DEFINE_UI_PARAMS(shadow_tint, Shadow Tint, DCTLUI_SLIDER_FLOAT, 0.2, 0.0, 1.0, 0.01)
-DEFINE_UI_PARAMS(highlight_warmth, Highlight Warmth, DCTLUI_SLIDER_FLOAT, 0.2, 0.0, 1.0, 0.01)
-DEFINE_UI_PARAMS(black_crush, Black Crush, DCTLUI_SLIDER_FLOAT, 0.05, 0.0, 0.3, 0.01)
-DEFINE_UI_PARAMS(halation, Halation, DCTLUI_SLIDER_FLOAT, 0.1, 0.0, 0.5, 0.01)
-DEFINE_UI_PARAMS(gamma, Gamma, DCTLUI_SLIDER_FLOAT, 1.0, 0.5, 2.5, 0.01)
-DEFINE_UI_PARAMS(vibrance, Vibrance, DCTLUI_SLIDER_FLOAT, 0.5, 0.0, 1.0, 0.01)
+DEFINE_UI_PARAMS(saturation, Saturation, DCTLUI_SLIDER_FLOAT, 0.0, 0.0, 2.0, 0.01)
+DEFINE_UI_PARAMS(contrast, Contrast, DCTLUI_SLIDER_FLOAT, 0.0, 0.5, 2.0, 0.01)
+DEFINE_UI_PARAMS(shadow_tint, Shadow Tint, DCTLUI_SLIDER_FLOAT, 0.0, 0.0, 1.0, 0.01)
+DEFINE_UI_PARAMS(highlight_warmth, Highlight Warmth, DCTLUI_SLIDER_FLOAT, 0.0, 0.0, 1.0, 0.01)
+DEFINE_UI_PARAMS(black_crush, Black Crush, DCTLUI_SLIDER_FLOAT, 0.0, 0.0, 0.3, 0.01)
+DEFINE_UI_PARAMS(halation, Halation, DCTLUI_SLIDER_FLOAT, 0.0, 0.0, 0.5, 0.01)
+DEFINE_UI_PARAMS(gamma, Gamma, DCTLUI_SLIDER_FLOAT, 0.0, 0.5, 2.5, 0.01)
+DEFINE_UI_PARAMS(vibrance, Vibrance, DCTLUI_SLIDER_FLOAT, 0.0, 0.0, 1.0, 0.01)
 DEFINE_UI_PARAMS(hue_shift, Hue Shift, DCTLUI_SLIDER_FLOAT, 0.0, -0.5, 0.5, 0.01)
 DEFINE_UI_PARAMS(mid_tone_balance, Mid Tone Balance, DCTLUI_SLIDER_FLOAT, 0.0, -1.0, 1.0, 0.01)
 DEFINE_UI_PARAMS(film_grain, Film Grain, DCTLUI_SLIDER_FLOAT, 0.0, 0.0, 1.0, 0.01)
-DEFINE_UI_PARAMS(bloom, Bloom, DCTLUI_SLIDER_FLOAT, 0.1, 0.0, 1.0, 0.01)
-DEFINE_UI_PARAMS(glow_intensity, Glow Intensity, DCTLUI_SLIDER_FLOAT, 0.1, 0.0, 1.0, 0.01)
-DEFINE_UI_PARAMS(toe_strength, Toe Strength, DCTLUI_SLIDER_FLOAT, 0.1, 0.0, 1.0, 0.01)
-DEFINE_UI_PARAMS(shoulder_strength, Shoulder Strength, DCTLUI_SLIDER_FLOAT, 0.1, 0.0, 1.0, 0.01)
-DEFINE_UI_PARAMS(highlight_recovery, Highlight Recovery, DCTLUI_SLIDER_FLOAT, 0.3, 0.0, 1.0, 0.01)
-DEFINE_UI_PARAMS(log_saturation, Log Saturation, DCTLUI_SLIDER_FLOAT, 1.0, 0.0, 2.0, 0.01)
+DEFINE_UI_PARAMS(bloom, Bloom, DCTLUI_SLIDER_FLOAT, 0.0, 0.0, 1.0, 0.01)
+DEFINE_UI_PARAMS(glow_intensity, Glow Intensity, DCTLUI_SLIDER_FLOAT, 0.0, 0.0, 1.0, 0.01)
+DEFINE_UI_PARAMS(toe_strength, Toe Strength, DCTLUI_SLIDER_FLOAT, 0.0, 0.0, 1.0, 0.01)
+DEFINE_UI_PARAMS(shoulder_strength, Shoulder Strength, DCTLUI_SLIDER_FLOAT, 0.0, 0.0, 1.0, 0.01)
+DEFINE_UI_PARAMS(highlight_recovery, Highlight Recovery, DCTLUI_SLIDER_FLOAT, 0.0, 0.0, 1.0, 0.01)
+DEFINE_UI_PARAMS(log_saturation, Log Saturation, DCTLUI_SLIDER_FLOAT, 0.0, 0.0, 2.0, 0.01)
 
 __DEVICE__ float3 process(float3 color) {
     color = clamp(color, 0.0, 1.0);
-    
-    // Convert to linear space for proper adjustments
     color = pow(color, float3(2.2));
     
-    // Adaptive highlight recovery
     float highlightLuma = dot(color, float3(0.299, 0.587, 0.114));
     color = mix(color, pow(color, float3(0.85)), highlight_recovery * smoothstep(0.7, 1.0, highlightLuma));
     
-    // Apply shadow tint (teal-green effect)
     float3 shadowColor = float3(0.0, 0.2, 0.3);
     float shadowLuma = dot(color, float3(0.299, 0.587, 0.114));
     color = mix(color, shadowColor, (1.0 - shadowLuma) * shadow_tint);
     
-    // Warm up highlights (golden hue effect)
     float3 warmTone = float3(1.0, 0.85, 0.7);
     color = mix(color, warmTone, smoothstep(0.5, 1.0, highlightLuma) * highlight_warmth);
     
-    // Adjust contrast
     float midGrey = 0.18;
     color = pow((color / midGrey), contrast) * midGrey;
     
-    // Crush blacks subtly with better roll-off
     color = max((color - black_crush) / (1.0 - black_crush), 0.0);
     
-    // Apply halation (soft glow in highlights)
     float halationEffect = smoothstep(0.6, 1.0, highlightLuma) * halation;
     color += halationEffect * float3(1.0, 0.6, 0.4) * 0.2;
     
-    // Apply bloom effect
     color += bloom * pow(highlightLuma, 2.0);
     
-    // Log-based saturation for better color control
     float logColor = log2(1.0 + dot(color, float3(0.2126, 0.7152, 0.0722)));
     color = mix(float3(logColor), color, log_saturation);
     
-    // Adjust vibrance
     float3 avgColor = (color + dot(color, float3(0.2126, 0.7152, 0.0722))) * 0.5;
     color = mix(avgColor, color, vibrance);
     
-    // Apply hue shift
     float3 shiftedColor = float3(
         color.r + hue_shift * (color.g - color.b),
         color.g + hue_shift * (color.b - color.r),
@@ -65,21 +53,16 @@ __DEVICE__ float3 process(float3 color) {
     );
     color = mix(color, shiftedColor, abs(hue_shift));
     
-    // Adjust mid-tone balance with luminance-based approach
     float midToneAdjust = smoothstep(0.3, 0.7, shadowLuma);
     color = mix(color, color * float3(1.0 + mid_tone_balance, 1.0, 1.0 - mid_tone_balance), midToneAdjust);
     
-    // Apply dynamic film grain
     color += film_grain * (fract(sin(dot(color, float3(12.9898, 78.233, 45.164))) * 43758.5453) - 0.5) * (1.0 - highlightLuma);
     
-    // Apply glow effect
     color += glow_intensity * pow(highlightLuma, 3.0);
     
-    // Toe & Shoulder adjustments
     color = pow(color, float3(1.0 / (1.0 + toe_strength)));
     color = 1.0 - pow(1.0 - color, float3(1.0 / (1.0 + shoulder_strength)));
     
-    // Apply gamma correction
     color = pow(color, float3(1.0 / gamma));
     
     return clamp(color, 0.0, 1.0);
